@@ -19,9 +19,8 @@ Usage
 Prepare taskwarrior
 -------------------
 
-You have to add `journal.time=on` to your taskwarrior configuration (`.taskrc`).
-Taskwarrior will save start and stop annotations from now on.
-This annotations are evaluated by tasktime.
+You have to update the `tasklib` python package to the version that has the
+`get_history` method.
 
 Note time with taskwarrior
 --------------------------
@@ -55,9 +54,9 @@ Output:
         Duration: 02:18:35
 
     Sum: 02:31:40
-    
+
 ### Print also tasks without time
-    
+
     ./tasktime.py -n cool-project
 
 Output:

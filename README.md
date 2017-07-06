@@ -4,26 +4,34 @@ tasktime
 *tasktime* reads information of a project from [taskwarrior](http://www.taskwarrior.org) and calculates, how much time was spent with this project.
 *tasktime* can print CSV or readable output.
 
-Usage
------
+## Usage
 
-    ./tasktime.py [parameters...] <project>
+```
+usage: tasktime [-h] [--data_location [path]] [-o [{csv}]] [-n] [-v | -q]
+                {project,task} ...
 
-### Parameters
+Calculate the spent time for a project or task from taskwarrior
 
-    -h, --help              Show help message
-    -c, --csv               Print output in CSV format
-    -n, --null              Print also tasks without time information (default: no)
-    -t, --task [cmd]        Change task command
+positional arguments:
+  {project,task}        subcommands
 
-Prepare taskwarrior
--------------------
+optional arguments:
+  -h, --help            show this help message and exit
+  --data_location [path]
+                        Location of taskwarrior data (~/.task)
+  -o [{csv}], --output [{csv}]
+                        Output in specified format
+  -n, --null            Print also tasks without time information
+  -v, --verbose
+  -q, --quiet
+```
+
+## Prepare taskwarrior
 
 You have to update the `tasklib` python package to the version that has the
-`get_history` method.
+`get_history` method. And configure the `history.cache` variables
 
-Note time with taskwarrior
---------------------------
+## Note time with taskwarrior
 
 taskwarrior has the operations *start* and *stop*.
 This information is used to calculate the spent time.
@@ -31,60 +39,83 @@ You have to start and stop the tasks you work on.
 
 Example:
 
-    task 2 start
+```
+task 2 start
 
-    # Work on task 2...
+# Work on task 2...
 
-    task 2 stop
+task 2 stop
+```
 
-Examples
---------
+## Examples
 
 ### Default output
 
-    ./tasktime.py cool-project
+```bash
+tasktime project cool-project
+```
 
 Output:
 
-    Project: cool-project
+```
+Do something cool
+    Duration: 00:13:05
+Do something really cool
+    Duration: 02:18:35
 
-    Do something cool
-        Duration: 00:13:05
-    Do something really cool
-        Duration: 02:18:35
-
-    Sum: 02:31:40
+Sum: 02:31:40
+```
 
 ### Print also tasks without time
 
-    ./tasktime.py -n cool-project
+```bash
+tasktime -n project cool-project
+```
 
 Output:
 
-    Project: cool-project
+```
 
-    Do something cool
-        Duration: 00:13:05
-    Do something boring
-    Do something really cool
-        Duration: 02:18:35
+Do something cool
+    Duration: 00:13:05
+Do something boring
+Do something really cool
+    Duration: 02:18:35
 
-    Sum: 02:31:40
+Sum: 02:31:40
+```
 
 ### CSV output
 
-    ./tasktime.py -c cool-project
+```bash
+tasktime -o csv project cool-project
+```
 
 Output:
 
-    "Project","cool-project"
-    "",""
-    "Description","Duration (hours)"
-    "",""
-    "Do something cool","00:13:05"
-    "Do something really cool","02:18:35"
-    "",""
-    "Sum","02:31:40"
+```
+"Project","cool-project"
+"",""
+"Description","Duration (hours)"
+"",""
+"Do something cool","00:13:05"
+"Do something really cool","02:18:35"
+"",""
+"Sum","02:31:40"
+```
+
+### Print task information
+
+```bash
+tasktime task 20
+```
+Output
+```
+Do something really cool
+    Duration: 02:18:35
+
+Sum: 02:18:35
+```
 
 Contact and copyright
 ---------------------

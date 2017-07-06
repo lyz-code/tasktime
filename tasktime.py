@@ -76,6 +76,7 @@ class TaskTime(object):
         self.backend = tasklib.TaskWarrior(
             data_location=os.path.expanduser(data_location))
         self.backend._get_history()
+        self.print_never_active_tasks = False
         self.printer = ReadablePrinter()
 
     def set_printer(self, printer):
@@ -84,52 +85,77 @@ class TaskTime(object):
     def set_null(self):
         self.printer.print_never_active_tasks = True
 
-    def set_project(self, project):
-        self.project = project
+    def set_tasks(self, **kwargs):
+        self.tasks = self.backend.tasks.filter(**kwargs)
 
-    def _set_tasks(self, filter):
-        self.tasks = self.backend.tasks.filter(filter)
+    def query_report(self, **kwargs):
+        self.set_tasks(**kwargs)
 
-    def report(self, query):
-        self._set_tasks(query)
-
-        self.printer.print_header('Query: {}'.format(query))
         total_time = 0
         for task in self.tasks:
-            if task['status'] == 'recurring':
+            if task['status'] == 'recurring' or \
+               task['status'] == 'deleted':
                 continue
+            active_time = task.active_time(args.period)
             self.printer.print_task(
-                task["description"], task.active_time())
-            total_time += task.active_time
+                task["description"], active_time)
+            total_time += active_time
         self.printer.print_result(total_time)
 
 
 def load_parser(argv):
     ''' Configure parser '''
-    # Argparse
-    description = "Calculate the spent time for a project from taskwarrior"
+    description = "Calculate the spent time for a project or task " + \
+                  "from taskwarrior"
     parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("--data_location", type=str, nargs='?',
+                        default="~/.task", metavar="path",
+                        help='Location of taskwarrior data (~/.task)')
+    parser.add_argument("-o", "--output", nargs='?', type=str, choices=['csv'],
+                        help='Output in specified format')
 
-    parser.add_argument("project", type=str, help='Project name')
-    parser.add_argument("-c", "--csv", action="store_true",
-                        help='Print output in CSV format')
     parser.add_argument("-n", "--null", action="store_true",
                         help='Print also tasks without time information')
-    parser.add_argument("--task_command", type=str, nargs='?',
-                        metavar="cmd", help='Change task command')
-    parser.add_argument("--data_location", type=str, nargs='?',
-                        default="~/.task", metavar="cmd",
-                        help='Location of taskwarrior data')
+    verbosity = parser.add_mutually_exclusive_group()
+    verbosity.add_argument("-v", "--verbose", action="count")
+    verbosity.add_argument("-q", "--quiet", action="store_true")
+
+    subparser = parser.add_subparsers(dest='subcommand', help='subcommands')
+
+    project_parser = subparser.add_parser('project')
+    task_parser = subparser.add_parser('task')
+
+    project_parser.add_argument("project", type=str, help='Project name')
+    project_parser.add_argument("-p", "--period", type=str, default=None,
+                                help='Taskwarrior compatible date string')
+    project_parser.add_argument("-s", "--status", type=str, default=None,
+                                choices=['pending', 'completed', 'waiting'],
+                                help='Tasks status')
+
+    task_parser.add_argument("taskid", type=str, help='Taskwarrior task id')
+    task_parser.add_argument("-p", "--period", type=str, default=None,
+                             help='Taskwarrior compatible date string')
 
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = load_parser(sys.argv)
-
     tt = TaskTime(args.data_location)
-    if args.csv:
-        tt.set_printer(CSVPrinter())
+
+    if args.output:
+        if args.output == 'csv':
+            tt.set_printer(CSVPrinter())
+
     if args.null:
         tt.set_null()
-    tt.report("project={}".format(args.project))
+
+    if args.subcommand == 'project':
+        if args.status:
+            tt.query_report(project=args.project, status=args.status)
+        else:
+            tt.query_report(project=args.project)
+    elif args.subcommand == 'task':
+        tt.query_report(id=args.taskid)
+    elif args.subcommand == 'completed':
+        tt.query_report(end__after='now - {}'.format(args.period))

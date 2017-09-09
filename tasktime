@@ -72,9 +72,10 @@ class ReadablePrinter(Printer):
 
 class TaskTime(object):
 
-    def __init__(self, data_location='~/.task'):
+    def __init__(self, data_location='~/.task', taskrc_location='~/.taskrc'):
         self.backend = tasklib.TaskWarrior(
-            data_location=os.path.expanduser(data_location))
+            data_location=os.path.expanduser(data_location),
+            taskrc_location=os.path.expanduser(taskrc_location))
         self.backend._get_history()
         self.print_never_active_tasks = False
         self.printer = ReadablePrinter()
@@ -111,6 +112,9 @@ def load_parser(argv):
     parser.add_argument("--data_location", type=str, nargs='?',
                         default="~/.task", metavar="path",
                         help='Location of taskwarrior data (~/.task)')
+    parser.add_argument("--taskrc_location", type=str, nargs='?',
+                        default="~/.taskrc", metavar="path",
+                        help='Location of taskwarrior config (~/.taskrc)')
     parser.add_argument("-o", "--output", nargs='?', type=str, choices=['csv'],
                         help='Output in specified format')
 
@@ -141,7 +145,7 @@ def load_parser(argv):
 
 if __name__ == "__main__":
     args = load_parser(sys.argv)
-    tt = TaskTime(args.data_location)
+    tt = TaskTime(args.data_location, args.taskrc_location)
 
     if args.output:
         if args.output == 'csv':
